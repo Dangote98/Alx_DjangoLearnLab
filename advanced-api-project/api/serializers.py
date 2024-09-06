@@ -17,7 +17,7 @@ Add custom validation to the BookSerializer to ensure the publication_year is no
 class BookSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
-        fields = ['author','title','publication_year']
+        fields = ['id','author','title','publication_year']
     def validate_publication_year(self,value):
         if value > datetime.now().year:
             raise serializers.ValidationError("Year cannot be in the future")

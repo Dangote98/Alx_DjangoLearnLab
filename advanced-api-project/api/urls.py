@@ -1,5 +1,9 @@
 from django.urls import path
-from .views import CreateBookView
+from .views import CreateView,ListView,DeleteView,UpdateView,DetailView
 urlpatterns = [
-    path('',CreateBookView.as_view()),
+    path('',CreateView.as_view()),
+    path('listview/',ListView.as_view()),
+    path('deleteview/<int:pk>/',DeleteView.as_view()),
+    path('updateview/<int:pk>/',UpdateView.as_view()),
+    path('detailview/<int:pk>/',DetailView.as_view()),
 ]
