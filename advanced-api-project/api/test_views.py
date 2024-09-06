@@ -23,6 +23,10 @@ class TestView(TestCase):
             'author':self.author.id
         })
         self.assertEquals(response.status_code,status.HTTP_201_CREATED)
+        self.assertIn('title', response.data)
+        self.assertIn('publication_year', response.data)
+        self.assertEquals(response.data['title'], 'The rationale male')
+        self.assertEquals(response.data['publication_year'], 2011)
     def test_update_book_PUT(self):
         Book.objects.create(title= 'The rationale male',
                             publication_year='2011',
@@ -35,7 +39,9 @@ class TestView(TestCase):
                 'author':self.author2.id
             },content_type='application/json')
             
-            self.assertEquals(response.status_code,status.HTTP_201_CREATED)
+            self.assertEquals(response.status_code,status.HTTP_200_OK)
+            self.assertIn('title', response.data)
+            self.assertEquals(response.data['title'], 'The rationale male...')
         else:
             print('Book not found')
             raise ValueError("Book not found")
@@ -46,8 +52,8 @@ class TestView(TestCase):
         book1 = Book.objects.get(title='The rationale male')
         if book1:
             response = self.client.delete(self.delete_url, book1)
-            self.assertEquals(response.status_code,status.HTTP_202_ACCEPTED)
-            
+            self.assertEquals(response.status_code,status.HTTP_204_NO_CONTENT)
+            self.assertEquals(response.data, None) 
 class TestViews(APITestCase):
     def setUp(self):
         
