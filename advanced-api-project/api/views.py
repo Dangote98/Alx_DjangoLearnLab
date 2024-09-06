@@ -5,7 +5,7 @@ from .serializers import AuthorSerializer,BookSerializer
 from rest_framework.filters import OrderingFilter
 from rest_framework import filters
 from rest_framework.decorators import permission_classes,authentication_classes
-from rest_framework.permissions import IsAuthenticatedOrReadOnly,IsAuthenticated
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework import serializers
 # Create your views here.
 
