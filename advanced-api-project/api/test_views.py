@@ -11,11 +11,11 @@ class TestView(TestCase):
         self.create_url = reverse('createview')
         self.update_url = reverse('updateview',args=[1])
         self.delete_url = reverse('deleteview',args=[1])
-        self.new_user = User.objects.create(username='Alex',email='alex124@gmail.com',password='Alex1234.')
+        self.new_user = User.objects.create_user(username='Alex',email='alex124@gmail.com',password='Alex1234.')
         self.user = User.objects.get(username='Alex')
         self.author = Author.objects.create(name='Jerr Junior')
         self.author2 = Author.objects.create(name='Rollo Tomassi')
-        self.client.force_login(user=self.user)
+        self.client.login(username='Alex',password='Alex1234.')
     def test_create_new_book_POST(self):
         response = self.client.post(self.create_url,{
             'title':'The rationale male',
