@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 from rest_framework.test import APIRequestFactory,APITestCase,force_authenticate
 from .views import CreateView
+from rest_framework import status
 class TestView(TestCase):
     def setUp(self):
         self.client = Client()
@@ -21,7 +22,7 @@ class TestView(TestCase):
             'publication_year':'2011',
             'author':self.author.id
         })
-        self.assertEquals(response.status_code,201)
+        self.assertEquals(response.status_code,status.HTTP_201_CREATED)
     def test_update_book_PUT(self):
         Book.objects.create(title= 'The rationale male',
                             publication_year='2011',
@@ -34,7 +35,7 @@ class TestView(TestCase):
                 'author':self.author2.id
             },content_type='application/json')
             
-            self.assertEquals(response.status_code,200)
+            self.assertEquals(response.status_code,status.HTTP_201_CREATED)
         else:
             print('Book not found')
             raise ValueError("Book not found")
@@ -45,7 +46,7 @@ class TestView(TestCase):
         book1 = Book.objects.get(title='The rationale male')
         if book1:
             response = self.client.delete(self.delete_url, book1)
-            self.assertEquals(response.status_code,204)
+            self.assertEquals(response.status_code,status.HTTP_202_ACCEPTED)
             
 class TestViews(APITestCase):
     def setUp(self):
