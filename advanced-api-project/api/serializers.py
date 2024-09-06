@@ -24,7 +24,7 @@ class BookSerializer(serializers.ModelSerializer):
         return value
 #I have inherited from the Book serializer through a nested relationship. I then included the books in the fields
 class AuthorSerializer(serializers.ModelSerializer):
-    books = BookSerializer(read_only=True, many=True)
+    books = BookSerializer(many=True, read_only=True)
     class Meta:
         model = Author
         fields = ['name','books']
