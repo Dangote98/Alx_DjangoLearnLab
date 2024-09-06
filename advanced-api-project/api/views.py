@@ -8,6 +8,8 @@ from rest_framework.decorators import permission_classes,authentication_classes
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework import serializers
 from django_filters.rest_framework import DjangoFilterBackend
+from django_filters import rest_framework
+from rest_framework import generics
 # Create your views here.
 
 #This view allows the user to only create a book instance but cannot get or update or delete it.
@@ -24,10 +26,10 @@ class CreateView(CreateAPIView):
         else:
             return super().create(request, *args, **kwargs)
 @permission_classes([IsAuthenticatedOrReadOnly])
-class ListView(ListAPIView):
+class ListView(generics.ListAPIView):
     queryset = Book.objects.all()
     serializer_class = BookSerializer
-    filter_backends = [DjangoFilterBackend, OrderingFilter,filters.SearchFilter]
+    filter_backends = [rest_framework.DjangoFilterBackend, OrderingFilter,filters.SearchFilter]
     filterset_fields = ['title', 'author__name','publication_year']
     ordering_fields = ['title', 'publication_year']
     search_fields = ['title','author__name']
