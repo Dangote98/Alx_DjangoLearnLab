@@ -5,7 +5,7 @@ from .serializers import AuthorSerializer,BookSerializer
 from rest_framework.filters import OrderingFilter
 from rest_framework import filters
 from rest_framework.decorators import permission_classes,authentication_classes
-from rest_framework.permissions import IsAuthenticated,IsAdminUser
+from rest_framework.permissions import IsAuthenticatedOrReadOnly,IsAuthenticated
 from rest_framework import serializers
 # Create your views here.
 
@@ -22,6 +22,7 @@ class CreateView(CreateAPIView):
             raise serializers.ValidationError('Book already exists')
         else:
             return super().create(request, *args, **kwargs)
+@permission_classes([IsAuthenticatedOrReadOnly])
 class ListView(ListAPIView):
     queryset = Book.objects.all()
     serializer_class = BookSerializer
