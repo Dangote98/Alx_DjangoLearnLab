@@ -45,3 +45,8 @@ class Post(models.Model):
     content = models.TextField()
     published_date = models.DateTimeField(auto_now_add=True)
     author = models.ForeignKey(User,on_delete=models.SET_NULL, null=True)
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User,on_delete=models.CASCADE,related_name='userprofile')
+    bio = models.TextField()
+    image_url = models.URLField(blank=True,null=True)
