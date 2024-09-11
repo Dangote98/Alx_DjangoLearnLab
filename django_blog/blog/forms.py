@@ -16,3 +16,8 @@ class UserDetailForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ['email','first_name','last_name','username']
+class PostForm(forms.ModelForm):
+    class Meta:
+        model = Post
+        fields = ['title','content']
+    

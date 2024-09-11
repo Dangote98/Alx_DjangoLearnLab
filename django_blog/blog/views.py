@@ -1,12 +1,14 @@
 from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import login
 from django.contrib.auth.models import User
-from .forms import CustomUserCreationForm,UserDetailForm,ProfileChangeForm
-from django.http import HttpResponseForbidden,HttpResponse
+from .forms import CustomUserCreationForm,UserDetailForm,ProfileChangeForm,PostForm
+from django.http import HttpRequest, HttpResponseForbidden,HttpResponse
 from django.contrib.auth.views import LoginView,LogoutView
 from django.urls import reverse_lazy
 from django.contrib.auth.decorators import login_required
-from .models import UserProfile
+from .models import UserProfile,Post
+from django.views.generic import ListView,CreateView,DeleteView,UpdateView,DetailView
+from django.contrib.auth.mixins import LoginRequiredMixin
 # Create your views here.
 
 
@@ -50,3 +52,61 @@ def profileview(request):
         profile_update_form = ProfileChangeForm(instance=user_profile)
     context = {"user_update_form":user_update_form,"profile_update_form":profile_update_form}
     return render(request,'blog/profile.html',context)
+# In this list view, the focus is on implement a view that allows all users to see all the posts\
+            # The use of the loginmixin is to ensure only logged in users are allowed\
+                # The login_url is placed on the settings.py
+class ListPostView(ListView):
+    model = Post
+    template_name = 'blog/list_posts.html'
+    
+    def get_queryset(self):
+        return Post.objects.all()
+# In this detail view, the focus is on implement a view that makes use of the specific post pk\
+        # use of the detail operation to view details of a single post with a specific id\
+            # The use of the loginmixin is to ensure only logged in users are allowed\
+                # The login_url is placed on the settings.py    
+class DetailPostView(LoginRequiredMixin, DetailView):
+    model = Post
+    template_name = 'blog/detail_post.html'
+    def get_queryset(self):
+        return Post.objects.all()
+ # In this create view, the focus is on implement a view that makes\
+        # use of the create operation to create a post\
+            # The use of the loginmixin is to ensure only logged in users are allowed\
+                # The login_url is placed on the settings.py   
+class CreatePostView(LoginRequiredMixin, CreateView):
+    template_name = 'blog/create_post.html'
+    model = Post
+    form_class = PostForm
+    def form_valid(self, form):
+        if form.is_valid():
+            posts = form.save(commit=False)
+            posts.author = self.request.user
+            posts.save()
+            return redirect('list_posts')
+        return super().form_valid(form)
+    # In this delete view, the focus is on implement a view that makes\
+        # use of the delete operation to delete a post with a specific id
+class DeletePostView(LoginRequiredMixin, DeleteView):
+    model = Post
+    template_name = 'blog/delete_post.html'
+    success_url = reverse_lazy('list_posts')
+# In this update view, the focus is on implement a view that makes\
+        # use of the update operation to update a post with a specific id\
+            # The use of the loginmixin is to ensure only logged in users are allowed\
+                # The login_url is placed on the settings.py
+    
+
+class UpdatePostView(LoginRequiredMixin, UpdateView):
+    model = Post
+    form_class = PostForm
+    template_name = 'blog/edit_post.html'
+    def form_valid(self, form):
+        if form.is_valid():
+            post = form.save(commit=False)
+            post.author = self.request.user
+            post.save()
+            
+        return super().form_valid(form)
+    success_url = reverse_lazy('list_posts')
+    
