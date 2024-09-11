@@ -4,7 +4,7 @@
 {% block content %}
 <h1>Create a New Post</h1>
 {% if user.is_authenticated %}
-<form action="{% url 'create_post' %}" method="post">
+<form action="{% url 'post_form' %}" method="post">
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit">Create New Post</button>

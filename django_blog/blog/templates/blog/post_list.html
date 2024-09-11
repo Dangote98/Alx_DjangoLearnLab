@@ -11,7 +11,7 @@ Post List
             {% csrf_token %}
             <button type="submit">Logout</button>
         </form>
-        <a href="{% url 'create_post' %}">Create New Post</a>
+        <a href="{% url 'post_form' %}">Create New Post</a>
     {% else %}
         <p><a href="{% url 'login' %}">Login</a> or <a href="{% url 'register' %}">Register</a></p>
     {% endif %}
@@ -24,7 +24,7 @@ Post List
                 <p>{{ post.published_date }}</p>
                
                 {% if user.is_authenticated and user == post.author %}
-                <p><a href="{% url 'edit_post' post.pk %}">Edit</a> | <a href="{% url 'delete_post' post.pk %}">Delete</a></p>
+                <p><a href="{% url 'edit_post' post.pk %}">Edit</a> | <a href="{% url 'post_confirm_delete' post.pk %}">Delete</a> | <a href="{% url 'post_detail' post.pk %}">See Details</a></p>
                 {% endif %}
             </li>
         {% empty %}

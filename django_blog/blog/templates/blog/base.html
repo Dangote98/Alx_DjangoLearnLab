@@ -17,9 +17,9 @@
                 <li><a href="{% url 'login' %}">Login</a></li>
                 <li><a href="{% url 'register' %}">Register</a></li>
                 {% endif %}
-                <li><a href="{% url 'list' %}">List Posts</a></li>
+                <li><a href="{% url 'post_list' %}">List Posts</a></li>
                 {% if user.is_authenticated %}
-                <li><a href="{% url 'create_post' %}">Create Posts</a></li>
+                <li><a href="{% url 'post_form' %}">Create Posts</a></li>
                 {% endif %}
             </ul>
         </nav>
