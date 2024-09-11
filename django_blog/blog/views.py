@@ -9,6 +9,7 @@ from django.contrib.auth.decorators import login_required
 from .models import UserProfile,Post
 from django.views.generic import ListView,CreateView,DeleteView,UpdateView,DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import UserPassesTestMixin
 # Create your views here.
 
 
@@ -57,7 +58,7 @@ def profileview(request):
                 # The login_url is placed on the settings.py
 class ListPostView(ListView):
     model = Post
-    template_name = 'blog/list_posts.html'
+    template_name = 'blog/list.html'
     
     def get_queryset(self):
         return Post.objects.all()
@@ -83,21 +84,24 @@ class CreatePostView(LoginRequiredMixin, CreateView):
             posts = form.save(commit=False)
             posts.author = self.request.user
             posts.save()
-            return redirect('list_posts')
+            return redirect('list')
         return super().form_valid(form)
     # In this delete view, the focus is on implement a view that makes\
         # use of the delete operation to delete a post with a specific id
-class DeletePostView(LoginRequiredMixin, DeleteView):
+class DeletePostView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Post
     template_name = 'blog/delete_post.html'
-    success_url = reverse_lazy('list_posts')
+    success_url = reverse_lazy('list')
+    def test_func(self):
+        post = self.get_object()
+        return post.author == self.request.user
 # In this update view, the focus is on implement a view that makes\
         # use of the update operation to update a post with a specific id\
             # The use of the loginmixin is to ensure only logged in users are allowed\
                 # The login_url is placed on the settings.py
     
 
-class UpdatePostView(LoginRequiredMixin, UpdateView):
+class UpdatePostView(LoginRequiredMixin,UserPassesTestMixin, UpdateView):
     model = Post
     form_class = PostForm
     template_name = 'blog/edit_post.html'
@@ -108,5 +112,8 @@ class UpdatePostView(LoginRequiredMixin, UpdateView):
             post.save()
             
         return super().form_valid(form)
-    success_url = reverse_lazy('list_posts')
+    success_url = reverse_lazy('list')
+    def test_func(self):
+        post = self.get_object()
+        return post.author == self.request.user
     
