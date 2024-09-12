@@ -134,7 +134,7 @@ class UpdatePostView(LoginRequiredMixin,UserPassesTestMixin, UpdateView):
         return post.author == self.request.user
     
 #create a createview allowing users to create comments. ensure authenticated users can create comments
-class CreateComment(CreateView):
+class CommentCreateView(CreateView):
     model = Comment
     form_class = CommentForm
     template_name = 'blog/comment_form.html'
@@ -188,13 +188,14 @@ class ListComment(LoginRequiredMixin, ListView):
             # comment.post= Post.objects.get(pk=self.kwargs['post_id'])
             comment.save()
         return super().form_valid(form)"""
-class DeleteComment(DeleteView):
+
+class CommentDeleteView(LoginRequiredMixin, DeleteView):
     model = Comment
     template_name = 'blog/delete_comment.html'
     def get_success_url(self):
         comment = self.get_object()
         return reverse_lazy('post_detail', kwargs={'pk': comment.post.pk})
-class CommentDetail(DetailView):
+class CommentDetail(LoginRequiredMixin, DetailView):
     model = Comment
     template_name = 'blog/comment_detail.html'
     def get_context_data(self, **kwargs):
@@ -203,7 +204,8 @@ class CommentDetail(DetailView):
         context["comment"] = comment
         context["post"] = comment.post
         return context
-def updatecomment(request,pk):
+@login_required(login_url='login')
+def CommentUpdateView(request,pk):
     comment = Comment.objects.get(pk=pk)
     post = Post.objects.get(pk=comment.post.pk)
     print(f"Comment content: {comment.content}")
