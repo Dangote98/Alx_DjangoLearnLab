@@ -1,15 +1,19 @@
+from django.db.models.base import Model as Model
+from django.db.models.query import QuerySet
+from django.forms import BaseModelForm
 from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import login
 from django.contrib.auth.models import User
-from .forms import CustomUserCreationForm,UserDetailForm,ProfileChangeForm,PostForm
+from .forms import CustomUserCreationForm,UserDetailForm,ProfileChangeForm,PostForm,CommentForm,UpdateForm
 from django.http import HttpRequest, HttpResponseForbidden,HttpResponse
 from django.contrib.auth.views import LoginView,LogoutView
 from django.urls import reverse_lazy
 from django.contrib.auth.decorators import login_required
-from .models import UserProfile,Post
+from .models import UserProfile,Post,Comment
 from django.views.generic import ListView,CreateView,DeleteView,UpdateView,DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
+from django.core.exceptions import ValidationError
 # Create your views here.
 
 
@@ -69,8 +73,20 @@ class ListPostView(ListView):
 class DetailPostView(LoginRequiredMixin, DetailView):
     model = Post
     template_name = 'blog/post_detail.html'
-    def get_queryset(self):
-        return Post.objects.all()
+    # def get_queryset(self):
+    #     return Post.objects.all()
+    # def get_queryset(self):
+    #     post = self.get_object()
+    #     comments = Comment.objects.filter(post=post)
+    #     return comments
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        post = self.get_object()
+        context["post"] = self.get_object()
+        context["comments"] = Comment.objects.filter(post=post)
+        return context
+    
  # In this create view, the focus is on implement a view that makes\
         # use of the create operation to create a post\
             # The use of the loginmixin is to ensure only logged in users are allowed\
@@ -117,3 +133,90 @@ class UpdatePostView(LoginRequiredMixin,UserPassesTestMixin, UpdateView):
         post = self.get_object()
         return post.author == self.request.user
     
+#create a createview allowing users to create comments. ensure authenticated users can create comments
+class CreateComment(CreateView):
+    model = Comment
+    form_class = CommentForm
+    template_name = 'blog/comment_form.html'
+    def form_valid(self, form: CommentForm):
+        if form.is_valid():
+            post = Post.objects.get(pk=self.kwargs['post_id'])
+            comment = form.save(commit=False)
+            comment.author = self.request.user
+            comment.post = post
+            comment.save()
+            return super().form_valid(form)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["post"] = Post.objects.get(pk=self.kwargs['post_id'])
+        
+        return context
+    
+    def get_success_url(self):
+        return reverse_lazy('post_detail',kwargs={'pk':self.kwargs['post_id']})
+class ListComment(LoginRequiredMixin, ListView):
+    model = Comment
+    template_name = 'blog/comment_list.html'
+    # def get_queryset(self):
+    #     return Comment.objects.all()
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        post = Post.objects.get(pk=self.kwargs['post_id'])
+        context["post"] = post
+        context["comments"] = Comment.objects.filter(post=post)
+        return context
+    
+"""class UpdateComment(UpdateView):
+    model = Comment
+    template = 'blog/edit_comment.html'
+    form_class = UpdateForm
+    def get_object(self, queryset=None):
+        return Comment.objects.get(pk=self.kwargs['comment_pk'])
+    def get_success_url(self):
+        comment = self.get_object()
+        return reverse_lazy('post_detail',kwargs={'pk': comment.post.pk})
+    # def get_context_data(self, **kwargs):
+    #     context = super().get_context_data(**kwargs)
+    #     context['post_id'] = self.get_object().post.pk
+    #     return context
+    def form_valid(self, form):
+        if form.is_valid():
+            comment = self.get_object()
+            comment = form.save(commit=False)
+            form.instance.author = self.request.user
+            comment.post = comment.post
+            # comment.post= Post.objects.get(pk=self.kwargs['post_id'])
+            comment.save()
+        return super().form_valid(form)"""
+class DeleteComment(DeleteView):
+    model = Comment
+    template_name = 'blog/delete_comment.html'
+    def get_success_url(self):
+        comment = self.get_object()
+        return reverse_lazy('post_detail', kwargs={'pk': comment.post.pk})
+class CommentDetail(DetailView):
+    model = Comment
+    template_name = 'blog/comment_detail.html'
+    def get_context_data(self, **kwargs):
+        context= super().get_context_data(**kwargs)
+        comment = self.get_object()
+        context["comment"] = comment
+        context["post"] = comment.post
+        return context
+def updatecomment(request,pk):
+    comment = Comment.objects.get(pk=pk)
+    post = Post.objects.get(pk=comment.post.pk)
+    print(f"Comment content: {comment.content}")
+    if request.method == 'POST':
+        form = UpdateForm(request.POST, instance=comment)
+        if form.is_valid():
+            if len(form.data['content'])<10:
+                raise ValidationError("The comment is too short")
+            else:
+                form.save()
+            return redirect('comment_list', post_id=post.pk)
+        
+    else:
+        form = UpdateForm(instance=comment)
+    context = {"form":form,"comment":comment}
+    return render(request,'blog/edit_comment.html',context)

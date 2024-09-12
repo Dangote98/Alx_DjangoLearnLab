@@ -47,9 +47,19 @@ class Post(models.Model):
     author = models.ForeignKey(User,on_delete=models.SET_NULL, null=True)
     
     def __str__(self):
-        return self.author.first_name
+        return f"Post Title {self.title} by {self.author.first_name} {self.author.last_name}"
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User,on_delete=models.CASCADE,related_name='userprofile')
     bio = models.TextField()
     image_url = models.URLField(blank=True,null=True)
+
+class Comment(models.Model):
+    post = models.ForeignKey(Post,on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(User,on_delete=models.CASCADE, related_name='comments')
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Comment by {self.author.first_name} {self.author.last_name}"
