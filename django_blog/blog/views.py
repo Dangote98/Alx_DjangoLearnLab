@@ -140,7 +140,7 @@ class CommentCreateView(CreateView):
     template_name = 'blog/comment_form.html'
     def form_valid(self, form: CommentForm):
         if form.is_valid():
-            post = Post.objects.get(pk=self.kwargs['post_id'])
+            post = Post.objects.get(pk=self.kwargs['pk'])
             comment = form.save(commit=False)
             comment.author = self.request.user
             comment.post = post
@@ -148,12 +148,12 @@ class CommentCreateView(CreateView):
             return super().form_valid(form)
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["post"] = Post.objects.get(pk=self.kwargs['post_id'])
+        context["post"] = Post.objects.get(pk=self.kwargs['pk'])
         
         return context
     
     def get_success_url(self):
-        return reverse_lazy('post_detail',kwargs={'pk':self.kwargs['post_id']})
+        return reverse_lazy('post_detail',kwargs={'pk':self.kwargs['pk']})
 class ListComment(LoginRequiredMixin, ListView):
     model = Comment
     template_name = 'blog/comment_list.html'

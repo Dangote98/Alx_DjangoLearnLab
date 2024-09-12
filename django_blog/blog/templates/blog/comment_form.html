@@ -4,7 +4,7 @@
 {% block content %}
 <h1>Create New Comment</h1>
 {% if user.is_authenticated %}
-<form action="{% url 'comment_form' post_id=post.pk %}" method="post">
+<form action="{% url 'comment_form' pk=post.pk %}" method="post">
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit">Add Comment</button>
