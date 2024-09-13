@@ -5,7 +5,7 @@ from .views import profileview,search,register,LoginUser,PostByTagListView,Logou
 urlpatterns = [
     path('',home,name='home'),
     path('search/',search,name='search_results'),
-    path('tag/<slug:tag_slug>/',PostByTagListView.as_view(),name='tagged_by_post'),
+    path('tags/<slug:tag_slug>/',PostByTagListView.as_view(),name='tagged_by_post'),
     path('register/',register,name='register'),
     path('login/',LoginUser.as_view(),name='login'),
     path('logout/',LogoutUser.as_view(next_page='/'),name='logout'),
