@@ -20,12 +20,13 @@ from taggit.models import Tag
 from django.db.models import Q
 def search(request):
     posts = Post.objects.all()
+    common_tags = Tag.objects.annotate(num_posts=Count('post')).order_by('-num_posts')[:4]
     if request.method == "GET":
         
         query = request.GET.get('q', '')
         queryset = posts.filter(Q(title__icontains=query) | Q(content__icontains=query)|Q(tags__name__icontains=query)).distinct()
         total = queryset.count()
-        return render(request, 'blog/search_results.html', {'posts': queryset,'query':query,"total":total})
+        return render(request, 'blog/search_results.html', {'posts': queryset,'query':query,"total":total,"common_tags":common_tags})
 # Create your views here.
 # def post_tags(request):
 #     posts = Post.objects.all().order_by('-title')
@@ -44,6 +45,22 @@ def tagged(request,slug):
         "tags":tag
     }
     return render(request,'blog/tagged_posts.html',context)
+class PostByTagListView(ListView):
+    template_name = 'blog/tagged_by_posts.html'
+    model = Post
+    context_object_name = 'posts'
+    def get_queryset(self):
+        tag_slug = self.kwargs.get('tag_slug') #get slug from url
+        posts = Post.objects.filter(tags__slug=tag_slug) #get posts associated with that tag_slug
+        return posts
+    
+    def get_context_data(self, **kwargs):
+        
+        context = super().get_context_data(**kwargs)
+        tag_slug = self.kwargs.get('tag_slug') #get slug with the url
+        context["tag"] = Tag.objects.get(slug=tag_slug)  #use the slug to pull the tag with that slug and pass it the context data from the queryset
+        return context
+    
 def register(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
@@ -274,3 +291,31 @@ def CommentUpdateView(request,pk):
         form = UpdateForm(instance=comment)
     context = {"form":form,"comment":comment}
     return render(request,'blog/edit_comment.html',context)
+
+
+# class PostByTagListView(ListView):
+#     model = Post
+#     template_name = 'blog/search_results.html'
+    
+#     def get_queryset(self):
+#         all_posts = Post.objects.all()
+#         query = self.request.GET.get('q','').strip() 
+#         if query:
+#             posts = all_posts.filter(
+#                 Q(title__icontains=query) |
+#                 Q(content__icontains=query) |
+#                 Q(tags__name__icontains=query)
+#             ).distinct()
+            
+#         else:
+#             posts = Post.objects.all().order_by('-title')
+#         self.total = posts.count()
+#         # return Post.objects.all()
+#         return posts
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data(**kwargs)
+#         # common_tags = common_tags = Post.tags.most_common()[:4]
+#         common_tags= Tag.objects.annotate(num_posts=Count('post')).order_by('-num_posts')[:4]
+#         context["common_tags"] = common_tags
+#         context["total"] = self.total
+#         return context

@@ -6,11 +6,20 @@
     <title>Posts</title>
 </head>
 <body>
+
     <form method="get" action="{% url 'search_results' %}">
         <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Search posts...">
         <button type="submit">Search</button>
     </form>
     <li>total search results = {{total}}</li>
+    <ul>
+        {% for tag in common_tags %}
+            <li>
+                <a href="{% url 'tagged_by_post' tag_slug=tag.slug %}">{{ tag.name }}</a> ({{ tag.num_posts }} posts)
+            </li>
+        {% endfor %}
+    </ul>
+        <ul>
     {% for post in posts %}
     <li>
         <h2><a href="{% url 'post_detail' post.pk %}">{{ post.title }}</a></h2>
@@ -24,5 +33,6 @@
         {% endif %}
     </li>
     {% endfor %}
+    
 </body>
 </html>

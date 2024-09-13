@@ -1,10 +1,11 @@
 from django.urls import path
-from .views import profileview,search,register,LoginUser,LogoutUser,home,CreatePostView,ListPostView,tagged,UpdatePostView,DeletePostView,DetailPostView,CommentCreateView,ListComment,CommentDeleteView,CommentDetail,CommentUpdateView
+from .views import profileview,search,register,LoginUser,PostByTagListView,LogoutUser,home,CreatePostView,ListPostView,tagged,UpdatePostView,DeletePostView,DetailPostView,CommentCreateView,ListComment,CommentDeleteView,CommentDetail,CommentUpdateView
 
 
 urlpatterns = [
     path('',home,name='home'),
     path('search/',search,name='search_results'),
+    path('tag/<slug:tag_slug>/',PostByTagListView.as_view(),name='tagged_by_post'),
     path('register/',register,name='register'),
     path('login/',LoginUser.as_view(),name='login'),
     path('logout/',LogoutUser.as_view(next_page='/'),name='logout'),
