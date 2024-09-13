@@ -14,9 +14,36 @@ from django.views.generic import ListView,CreateView,DeleteView,UpdateView,Detai
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.core.exceptions import ValidationError
+from django.template.defaultfilters import slugify
+from django.db.models import Count
+from taggit.models import Tag
+from django.db.models import Q
+def search(request):
+    posts = Post.objects.all()
+    if request.method == "GET":
+        
+        query = request.GET.get('q', '')
+        queryset = posts.filter(Q(title__icontains=query) | Q(content__icontains=query)|Q(tags__name__icontains=query)).distinct()
+        total = queryset.count()
+        return render(request, 'blog/search_results.html', {'posts': queryset,'query':query,"total":total})
 # Create your views here.
-
-
+# def post_tags(request):
+#     posts = Post.objects.all().order_by('-title')
+#     # common_tags = Tag.objects.annotate(num_posts=Count('post')).order_by('-num_posts')[:4]
+#     common_tags = Post.tags.most_common()[:4]
+#     context = {
+#         "posts":posts,
+#         "common_tags":common_tags
+#     }
+#     return render(request,'blog/tags.html',context)
+def tagged(request,slug):
+    tag = get_object_or_404(Tag,slug=slug)
+    posts = Post.objects.filter(tags=tag)
+    context = {
+        "posts":posts,
+        "tags":tag
+    }
+    return render(request,'blog/tagged_posts.html',context)
 def register(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
@@ -65,7 +92,28 @@ class ListPostView(ListView):
     template_name = 'blog/post_list.html'
     
     def get_queryset(self):
-        return Post.objects.all()
+        all_posts = Post.objects.all()
+        query = self.request.GET.get('q','').strip() 
+        if query:
+            posts = all_posts.filter(
+                Q(title__icontains=query) |
+                Q(content__icontains=query) |
+                Q(tags__name__icontains=query)
+            ).distinct()
+            
+        else:
+            posts = Post.objects.all().order_by('-title')
+        self.total = posts.count()
+        # return Post.objects.all()
+        return posts
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # common_tags = common_tags = Post.tags.most_common()[:4]
+        common_tags= Tag.objects.annotate(num_posts=Count('post')).order_by('-num_posts')[:4]
+        context["common_tags"] = common_tags
+        context["total"] = self.total
+        return context
+    
 # In this detail view, the focus is on implement a view that makes use of the specific post pk\
         # use of the detail operation to view details of a single post with a specific id\
             # The use of the loginmixin is to ensure only logged in users are allowed\
@@ -99,7 +147,9 @@ class CreatePostView(LoginRequiredMixin, CreateView):
         if form.is_valid():
             posts = form.save(commit=False)
             posts.author = self.request.user
+            posts.slug = slugify(posts.title)
             posts.save()
+            form.save_m2m()
             return redirect('post_list')
         return super().form_valid(form)
     # In this delete view, the focus is on implement a view that makes\
@@ -134,7 +184,7 @@ class UpdatePostView(LoginRequiredMixin,UserPassesTestMixin, UpdateView):
         return post.author == self.request.user
     
 #create a createview allowing users to create comments. ensure authenticated users can create comments
-class CommentCreateView(CreateView):
+class CommentCreateView(LoginRequiredMixin, CreateView):
     model = Comment
     form_class = CommentForm
     template_name = 'blog/comment_form.html'
@@ -204,6 +254,8 @@ class CommentDetail(LoginRequiredMixin, DetailView):
         context["comment"] = comment
         context["post"] = comment.post
         return context
+# opted for a function view instead. The update view created some conflicts\
+    # I was unable to resolve. It kept getting redirected to create comment
 @login_required(login_url='login')
 def CommentUpdateView(request,pk):
     comment = Comment.objects.get(pk=pk)

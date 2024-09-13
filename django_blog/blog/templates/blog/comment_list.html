@@ -26,13 +26,16 @@ Post Comment List
                 <p>Comment creation date: {{ comment.created_at }}</p>
                 <p>Comment Modification date: {{ comment.updated_at }}</p>
                 <p>Post Title: {{ comment.post.title }}</p>
-                
+                {% if user.is_authenticated and user == comment.author %}
                 <form action="{% url 'edit_comment' pk=comment.pk %}" method="post" style="display:inline;">
                     {% csrf_token %}
                     {{ form.as_p }}
                     <button type="submit">Edit Comment</button>
                 </form>
+                {% endif %} 
+                {% if user.is_authenticated and user == comment.author %}
                 <a href="{% url 'delete_comment' comment.pk %}">Delete</a> 
+                {% endif %} 
                 <a href="{% url 'comment_detail' comment.pk %}">See Comment Detail</a> 
                 {% comment %} <a href="{% url 'edit_comment' comment_pk=comment.pk %}">Edit a Comment</a>  {% endcomment %}
                {% comment %} {% if user.is_authenticated and user == comment.author %}

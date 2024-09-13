@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser,BaseUserManager
 from django.contrib.auth.models import User
+from taggit.managers import TaggableManager
 # Create your models here.
 # class UserManager(BaseUserManager):
 #     def create_user(self,email,username,password,first_name,last_name):
@@ -39,12 +40,15 @@ from django.contrib.auth.models import User
 #     objects = UserManager()
 #     USERNAME_FIELD = 'email'
 #     REQUIRED_FIELDS = []
-
+class Tag(models.Model):
+    name = models.CharField(max_length=100)
 class Post(models.Model):
     title = models.CharField(max_length=200, null=False, unique=True)
     content = models.TextField()
     published_date = models.DateTimeField(auto_now_add=True)
     author = models.ForeignKey(User,on_delete=models.SET_NULL, null=True)
+    slug = models.SlugField(unique=True, max_length=100)
+    tags= TaggableManager()
     
     def __str__(self):
         return f"Post Title {self.title} by {self.author.first_name} {self.author.last_name}"

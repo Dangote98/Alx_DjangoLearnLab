@@ -1,9 +1,10 @@
 from django.urls import path
-from .views import profileview,register,LoginUser,LogoutUser,home,CreatePostView,ListPostView,UpdatePostView,DeletePostView,DetailPostView,CommentCreateView,ListComment,CommentDeleteView,CommentDetail,CommentUpdateView
+from .views import profileview,search,register,LoginUser,LogoutUser,home,CreatePostView,ListPostView,tagged,UpdatePostView,DeletePostView,DetailPostView,CommentCreateView,ListComment,CommentDeleteView,CommentDetail,CommentUpdateView
 
 
 urlpatterns = [
     path('',home,name='home'),
+    path('search/',search,name='search_results'),
     path('register/',register,name='register'),
     path('login/',LoginUser.as_view(),name='login'),
     path('logout/',LogoutUser.as_view(next_page='/'),name='logout'),
@@ -19,4 +20,5 @@ urlpatterns = [
     path('comment/<int:pk>/update/',CommentUpdateView,name='edit_comment'),
     path('comment/<int:pk>/delete/',CommentDeleteView.as_view(), name='delete_comment'),
     path('comment/<int:pk>/',CommentDetail.as_view(),name='comment_detail'),
+    path('tag/tag_name/<slug:slug>/',tagged,name='tagged')
 ]
