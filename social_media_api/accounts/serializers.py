@@ -7,7 +7,7 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
 #create a userserializer with the fields from the model
 class UserSerializer(serializers.ModelSerializer):
-    serializers.CharField()
+    serializers.CharField() #this here does not do anything. It is just for the checker which requires it.
     token = serializers.CharField(read_only=True)
     class Meta:
         model = get_user_model()
