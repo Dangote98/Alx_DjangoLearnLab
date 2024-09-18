@@ -48,7 +48,7 @@ class CustomUser(AbstractUser):
     date_of_birth = models.DateField(verbose_name='date of birth')
     date_joined = models.DateTimeField(auto_now_add=True)
     profile_picture = models.URLField(max_length=255,blank=True,null=True,default=None)
-    profile_picture = models.ImageField(max_length=255,blank=True,null=True,default=None)
+    # profile_picture = models.ImageField(max_length=255,blank=True,null=True,default=None)
     bio = models.TextField(blank=True,null=True,default=None)
     followers = models.ManyToManyField('self',symmetrical=False, blank=True,related_name='followed_by', default=0)
     def followerscount(self):
