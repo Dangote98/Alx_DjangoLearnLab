@@ -1,5 +1,5 @@
 from django.test import TestCase
-from .views import signup,login,UserProfileView
+from .views import signup,login,UserProfileView,signup_user,login_user
 from rest_framework.test import APIRequestFactory,APIClient,APITestCase
 from django.urls import reverse
 from .models import CustomUser
@@ -15,6 +15,8 @@ class TestViews(APITestCase):
         self.login_url = reverse('login')
         self.profile_url = reverse('userprofile')
         self.auth_url = 'api_auth/'
+        self.signup_user_url = reverse('register')
+        self.login_user_url = reverse('login_user')
         #here, I am creating a new user using the Customuser model
         self.new_user = CustomUser.objects.create_user(
             username="Michael",
@@ -22,7 +24,7 @@ class TestViews(APITestCase):
             date_of_birth = "2011-11-11",
             first_name="Michael",
             last_name= "James",
-            password="Michael1234."
+            password="Michael1234.",
             
         )
     #I first tested the register of the new user
@@ -63,16 +65,16 @@ class TestViews(APITestCase):
     #I then tested another new user
     def test_new_login_user(self) :
         self.user = self.client.post(self.register_url,{
-            "username":"Ann",
-            "email":"ann@gmail.com",
+            "username":"janes",
+            "email":"janes@gmail.com",
             "password":"Anne1234.",
-            "first_name":"Ann",
-            "last_name":"Michelle",
+            "first_name":"Anna",
+            "last_name":"baracks",
             "date_of_birth":"2011-11-11",
             "bio":"",
             "profile_picture":"",
             })
-        response = self.client.post(self.login_url,{"email":"ann@gmail.com", "password":"Anne1234."})
+        response = self.client.post(self.login_url,{"email":"janes@gmail.com", "password":"Anne1234."})
         self.assertEquals(response.status_code,status.HTTP_200_OK) 
         token = response.data.get('token') #retrieves the token from user data
       
@@ -98,7 +100,7 @@ class TestViews(APITestCase):
     #I tested another user here
     def test_another_user_profile(self):
         self.second_user = self.client.post(self.register_url,{
-            "username":"Johnie",
+            "username":"Johnte",
             "email":"johnie@gmail.com",
             "password":"Johnie1234.",
             "first_name":"John",
@@ -112,6 +114,7 @@ class TestViews(APITestCase):
             'password': 'Johnie1234.'
         })
         token = response.data.get('token')
+        print(f"Token for jonte: {token}")
         # Set the token for subsequent requests
         self.client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
         response = self.client.get(reverse('userprofile'))
@@ -119,5 +122,41 @@ class TestViews(APITestCase):
         self.assertIn("email",response.data)
         # self.assertIn("username",response.data["user"])
         self.assertEquals(response.data["email"],"johnie@gmail.com")
+    def test_new_user_sign_up(self):
+        response = self.client.post(self.signup_user_url,{
+            "username":"Manny",
+            "email":"manny@gmail.com",
+            "password":"Johnie1234.",
+            "first_name":"Manny",
+            "last_name":"Laws",
+            "date_of_birth":"2011-11-11",
+            "bio":"This is a test",
+            "profile_picture":"https://i.pinimg.com/originals/5a/72/9c/5a729ca9a4a4020c7090cc87665b7549.jpg"
+            })
+        self.assertEquals(response.status_code,status.HTTP_200_OK)
+        self.assertIn('username',response.data["user"])
+        self.assertEquals(response.data["user"]['username'],'Manny')
+    #This login is the one in the serializer, where I use serializers.Serializer. 
+    def test_new_login_method(self):
+        #here we are first signing up the new user
+        self.client.post(self.signup_user_url,{
+            "username":"Manny",
+            "email":"manny@gmail.com",
+            "password":"Johnie1234.",
+            "first_name":"Manny",
+            "last_name":"Laws",
+            "date_of_birth":"2011-11-11",
+            "bio":"This is a test",
+            "profile_picture":"https://i.pinimg.com/originals/5a/72/9c/5a729ca9a4a4020c7090cc87665b7549.jpg"
+            })
+        #we are then loggin in this user
+        response = self.client.post(self.login_user_url,{
+            "email":"manny@gmail.com",
+            "password":"Johnie1234.",
+        })
+        #we then assert that the responses are correct
+        self.assertEquals(response.status_code,status.HTTP_200_OK)
+        self.assertIn('email',response.data)
+        self.assertEquals(response.data["email"],"manny@gmail.com")
 
 

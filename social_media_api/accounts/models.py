@@ -33,7 +33,7 @@ class UserManager(BaseUserManager):
             first_name=first_name,
             last_name=last_name,
             date_of_birth=date_of_birth,
-            password=password
+            password=password,
         )
         user.is_staff = True
         user.is_admin = True
