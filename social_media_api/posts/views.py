@@ -5,6 +5,9 @@ from django.contrib.auth import get_user_model
 from rest_framework import viewsets
 from rest_framework.permissions import BasePermission, IsAuthenticated, SAFE_METHODS
 from rest_framework import filters
+from rest_framework.decorators import permission_classes,api_view
+from rest_framework.response import Response
+from rest_framework import status
 User = get_user_model()
 # Create your views here.
 #Step 3: Create Views for CRUD Operations
@@ -47,3 +50,20 @@ Enhance API Usability:
 Add pagination to post and comment list endpoints to manage large datasets.
 Implement filtering capabilities in post views to allow users to search posts by title or content.
 """
+"""
+Step 3: Implement the Feed Functionality
+Feed Generation:
+Create a view in the posts app that generates a feed based on the posts from users that the current user follows.
+This view should return posts ordered by creation date, showing the most recent posts at the top.
+"""
+#first we authenticate
+@permission_classes([IsAuthenticated])
+#we get api decorate
+@api_view(['GET'])
+def user_feed(request):
+    users_followed_by_current_user = request.user.following.all() #here we are getting all users the user follows
+    #we need now to get the posts
+    posts_by_these_following_users = Post.objects.filter(author__in=users_followed_by_current_user).order_by('-created_at')
+    serializer = PostSerializer(posts_by_these_following_users,many=True)
+    return Response(serializer.data,status=status.HTTP_200_OK)
+    

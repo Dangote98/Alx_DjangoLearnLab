@@ -50,9 +50,10 @@ class CustomUser(AbstractUser):
     profile_picture = models.URLField(max_length=255,blank=True,null=True,default=None)
     # profile_picture = models.ImageField(max_length=255,blank=True,null=True,default=None)
     bio = models.TextField(blank=True,null=True,default=None)
-    followers = models.ManyToManyField('self',symmetrical=False, blank=True,related_name='followed_by', default=0)
+    followers = models.ManyToManyField('self',symmetrical=False, blank=True,related_name='following', default=0)
+    @property
     def followerscount(self):
-        follower_count = self.followed_by.all().count()
+        follower_count = self.following.all().count()
         return str(follower_count)
     
     USERNAME_FIELD = 'email'

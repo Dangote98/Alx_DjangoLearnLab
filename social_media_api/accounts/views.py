@@ -10,6 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import permission_classes,authentication_classes
 from rest_framework.authentication import TokenAuthentication
 from django.contrib.auth import get_user_model
+
 # Create your views here.
 #use a function view with an api decorator to signup
 @api_view(['POST'])
@@ -57,6 +58,41 @@ def login_user(request):
 class UserProfileView(RetrieveUpdateAPIView):
     serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated] #It ensures that the user is authenticated so that we can get the token
-    
     def get_object(self): #returns the profile of the user
         return self.request.user
+"""
+Step 2: Create API Endpoints for Managing Follows
+Follow Management Views:
+Develop views in the accounts app that allow users to follow and unfollow others. This might include actions like follow_user and unfollow_user, which update the following relationship.
+Ensure proper permissions are enforced so users can only modify their own following list.
+"""
+#We must create a follow view only that allows users to follow a specific profile
+#so first, we must get that user profile using a specific pk
+User = get_user_model()
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def follow_user(request,user_id):
+    #we get that id of the user
+    user_to_follow = User.objects.get(id=user_id)
+    #we check whether that user exists
+    if user_to_follow:
+        #we use related name and add because we are dealing with many to many relationships
+        request.user.following.add(user_to_follow)
+        
+        return Response({"You are now following":user_to_follow.username},status=status.HTTP_202_ACCEPTED)
+    else:
+        #we raise an error incase the follow fails
+        return Response({"Details":"Not Found"},status=status.HTTP_404_NOT_FOUND)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def unfollow_user(request,user_id):
+    #first, we retrieve the user to unfollow
+    user_to_unfollow = User.objects.get(id=user_id)
+    #we check whether that user exists
+    if user_to_unfollow:
+        request.user.following.remove(user_to_unfollow)
+        return Response({"You have unfollowed":user_to_unfollow.username},status=status.HTTP_202_ACCEPTED)
+    else:
+        #we raise an error incase the follow fails
+        return Response({"Details":"Not Found"},status=status.HTTP_404_NOT_FOUND)
+    

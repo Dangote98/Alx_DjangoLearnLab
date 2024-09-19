@@ -19,10 +19,17 @@ class CommentSerializer(serializers.ModelSerializer):
 class PostSerializer(serializers.ModelSerializer):
     #We want to make sure we can also pass the comments within each post
     comments = CommentSerializer(many=True,required=False)
-    author = serializers.CharField(read_only=True)
+    # author = serializers.CharField(read_only=True)
+    author = serializers.SerializerMethodField()
     class Meta:
         model = Post
         fields = ['id','title','content','comments','author']
+    def get_author(self, obj):
+        return {
+            "id": obj.author.id,
+            "username": obj.author.username,  #This method aims to get key details for the user so that I can pass them as output for userfeed
+            "email": obj.author.email
+        }
     def validate_title(self, value):
         if len(value)<5:
             raise ValidationError("Title needs to be longer than five characters")

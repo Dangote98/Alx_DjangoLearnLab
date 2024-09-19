@@ -74,11 +74,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(read_only=True)
     date_of_birth = serializers.DateField(read_only=True)
     token = serializers.CharField(read_only=True)
+    follower_count = serializers.SerializerMethodField()
     class Meta:
         model = get_user_model()
-        fields = ["email","bio","profile_picture",'id','token','date_of_birth','username','first_name','last_name']
+        fields = ["email","bio","profile_picture",'id','token','date_of_birth','follower_count','username','first_name','last_name']
     #there is a method called to represent that allows you to modify the representation of a serializer
     #I have used it and then passed the token. it is a dict meaning we use square brackets.
+    def get_follower_count(self,obj):
+        return obj.following.count() #I am using this to get the follower_count attribute
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         token,created = Token.objects.get_or_create(user=instance)

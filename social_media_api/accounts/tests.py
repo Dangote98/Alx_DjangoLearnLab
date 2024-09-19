@@ -1,8 +1,9 @@
 from django.test import TestCase
-from .views import signup,login,UserProfileView,signup_user,login_user
+from .views import signup,login,UserProfileView,signup_user,login_user,follow_user,unfollow_user
 from rest_framework.test import APIRequestFactory,APIClient,APITestCase
 from django.urls import reverse
 from .models import CustomUser
+from django.contrib.auth import get_user_model
 from rest_framework import status
 # Create your tests here.
 #setUp allows us to initialize important details
@@ -17,6 +18,7 @@ class TestViews(APITestCase):
         self.auth_url = 'api_auth/'
         self.signup_user_url = reverse('register')
         self.login_user_url = reverse('login_user')
+        
         #here, I am creating a new user using the Customuser model
         self.new_user = CustomUser.objects.create_user(
             username="Michael",
@@ -27,6 +29,13 @@ class TestViews(APITestCase):
             password="Michael1234.",
             
         )
+        User = get_user_model()
+        self.newuser2 = User.objects.create_user(username="Lawrence",
+            email="lawssen@gmail.com",
+            date_of_birth = "2011-11-11",
+            first_name="Manys",
+            last_name= "Johns",
+            password="Michael1234.",)
     #I first tested the register of the new user
     def test_register_new_user(self):
         #I use the post method and pass the register url and the json details
@@ -158,5 +167,71 @@ class TestViews(APITestCase):
         self.assertEquals(response.status_code,status.HTTP_200_OK)
         self.assertIn('email',response.data)
         self.assertEquals(response.data["email"],"manny@gmail.com")
-
-
+    def test_follow_new_user(self):
+        #first we log in the user
+        response = self.client.post(self.login_user_url,{
+            "email":"michael@gmail.com",
+            "password":"Michael1234.",
+        })
+        # self.client.login(email="michael@gmail.com",password="Michael1234.")
+        token = response.data.get('token')
+        print(f"Token for Michael: {token}")
+        # Set the token for subsequent requests
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
+        #we check whether that login worked
+        self.assertEquals(response.status_code,status.HTTP_200_OK)
+        #we now need to follow another user
+        User = get_user_model()
+        user_to_follow = User.objects.get(username='Lawrence')
+        user_id = user_to_follow.id
+        print(f"Lawrence user id: {user_id}")
+        #we now need to follow this user
+        self.follow_url = reverse('following',args=[user_id])
+        response = self.client.post(self.follow_url)
+        print(response.data)
+        self.assertEquals(response.status_code,status.HTTP_202_ACCEPTED)
+        user_following = User.objects.get(username='Michael')
+        following_count = user_following.following.all().count() #It tracks number of followers the user has
+        print(f"number of people Michael is following: {following_count}")
+    def test_unfollow_user(self):
+        #first we login
+        response = self.client.post(self.login_user_url,{
+            "email":"michael@gmail.com",
+            "password":"Michael1234.",
+        })
+        token = response.data.get('token')
+        print(f"Token for Michael: {token}")
+        # Set the token for subsequent requests
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
+        #we check whether that login worked
+        self.assertEquals(response.status_code,status.HTTP_200_OK)
+        #we then follow a user
+        #we now need to follow another user
+        User = get_user_model()
+        user_to_follow = User.objects.get(username='Lawrence')
+        user_id = user_to_follow.id
+        print(f"Lawrence user id: {user_id}")
+        #we now need to follow this user
+        self.follow_url = reverse('following',args=[user_id])
+        response = self.client.post(self.follow_url)
+        print(response.data)
+        self.assertEquals(response.status_code,status.HTTP_202_ACCEPTED)
+        user_following = User.objects.get(username='Michael')
+        following_count = user_following.following.all().count() #It tracks number of followers the user has
+        print(f"number of folowers by Michael at the start: {following_count}")
+        #we then need to do unfollow
+        self.unfollow_url = reverse('unfollow',args=[user_id])
+        response = self.client.post(self.unfollow_url)
+        print(response.data)
+        self.assertEquals(response.status_code,status.HTTP_202_ACCEPTED)
+        #we then see whether the follower count has changed
+        user_following = User.objects.get(username='Michael')
+        following_count = user_following.following.all().count()
+        #we print the output
+        print(f"number of folowers by Michael after the unfollow: {following_count}")
+        #I want to see whether I can see the change in followers after the unfollow or follow inside the user profile
+        response = self.client.get(reverse('userprofile'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("follower_count",response.data)
+        # self.assertIn("username",response.data["user"])
+        self.assertEquals(response.data["follower_count"],0) #we check whether the follower count is zero

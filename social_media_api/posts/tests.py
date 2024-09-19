@@ -17,7 +17,7 @@ class TestViews(APITestCase):
         #I then create a reverse for the urls
         #when using viewsets, we have an option to add -detail or -list. -detail is to see a single post, while list include post, put, and get
         self.posts_url = reverse('posts-list')
-       
+        self.login_user_url = reverse('login_user')
         self.comments_url = reverse('comments-list')
         #we first create the first user
         self.user1 = get_user_model().objects.create_user(
@@ -177,3 +177,53 @@ class TestViews(APITestCase):
         #we then update this particular post
         response = self.client.delete(self.delete_comment_url,)
         self.assertEquals(response.status_code,status.HTTP_204_NO_CONTENT)
+    def test_user_feed(self):
+        #we first login to get authenticated
+        self.client.login(email='martin@gmail.com',password='Martin1234.')
+        #we then create two posts with this user as the author
+        response = self.client.post(self.posts_url,{
+            "title":"This is the first test post",
+            "content":"This is the content for this test post"
+        })
+        self.assertEquals(response.status_code,status.HTTP_201_CREATED)
+        #we create post 2
+        response = self.client.post(self.posts_url,{
+            "title":"This is the second post",
+            "content":"This is the content for second post"
+        })
+        self.assertEquals(response.status_code,status.HTTP_201_CREATED)
+        #we then logout this user
+        self.client.logout()
+        #we then login the next user
+        response = self.client.post(self.login_user_url,{
+            "email":"lawrence@gmail.com",
+            "password":"Lawrence1234.",
+        })
+        #we then implement follow logic
+        token = response.data.get('token')
+        print(f"Token for Lawrence: {token}")
+        # Set the token for subsequent requests
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
+        #we check whether that login worked
+        self.assertEquals(response.status_code,status.HTTP_200_OK)
+        #we now need to follow another user
+        User = get_user_model()
+        user_to_follow = User.objects.get(username='Martin')
+        user_id = user_to_follow.id
+        print(f"Martin to be followed user id: {user_id}")
+        #we now need to follow this user
+        self.follow_url = reverse('following',args=[user_id])
+        response = self.client.post(self.follow_url)
+        print(response.data)
+        self.assertEquals(response.status_code,status.HTTP_202_ACCEPTED)
+        user_following = User.objects.get(username='Lawrence')
+        following_count = user_following.following.all().count() #It tracks number of followers the user has
+        print(f"number of people Lawrence is following: {following_count}")
+        #We now need to test userfeed
+        user_feed_url = reverse('userfeed')  # URL for the feed in the posts app
+        response = self.client.get(user_feed_url)
+        self.assertEquals(response.status_code, status.HTTP_200_OK)
+        #we may also want to see the content
+        for post in response.data:
+            self.assertEquals(post['author']['username'],'Martin') #here, I want to see whether the author for each post is martin
+            print(post) #here, I want to see whether posts are printed
