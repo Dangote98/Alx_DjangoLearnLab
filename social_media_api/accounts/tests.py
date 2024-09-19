@@ -29,6 +29,15 @@ class TestViews(APITestCase):
             password="Michael1234.",
             
         )
+        self.new_user1 = CustomUser.objects.create_user(
+            username="annex",
+            email="annex@gmail.com",
+            date_of_birth = "2011-11-11",
+            first_name="Ann",
+            last_name= "Janie",
+            password="Michael1234.",
+            
+        )
         User = get_user_model()
         self.newuser2 = User.objects.create_user(username="Lawrence",
             email="lawssen@gmail.com",
@@ -235,3 +244,19 @@ class TestViews(APITestCase):
         self.assertIn("follower_count",response.data)
         # self.assertIn("username",response.data["user"])
         self.assertEquals(response.data["follower_count"],0) #we check whether the follower count is zero
+    def test_view_users(self):
+        #we login in with a specific user
+        response = self.client.post(self.login_user_url,{
+            "email":"michael@gmail.com",
+            "password":"Michael1234.",
+        })
+        token = response.data.get('token')
+        print(f"Token for Michael: {token}")
+        # Set the token for subsequent requests
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
+        #we check whether that login worked
+        self.assertEquals(response.status_code,status.HTTP_200_OK)
+        #we test whether we shall see all users
+        self.view_users_url = reverse('viewusers')
+        response = self.client.get(self.view_users_url)
+        print(response.data)

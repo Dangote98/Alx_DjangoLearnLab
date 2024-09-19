@@ -87,4 +87,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
         token,created = Token.objects.get_or_create(user=instance)
         representation['token'] = token.key
         return representation
-    
+class ListUsersForFollowPurposes(serializers.ModelSerializer):
+    username = serializers.CharField(read_only=True)
+    first_name = serializers.CharField(read_only=True)
+    last_name = serializers.CharField(read_only=True)
+    class Meta:
+        model = CustomUser
+        fields = ['id','username','first_name','last_name']
