@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Post, Comment
+from .models import Post, Comment,Like
 from rest_framework.serializers import ValidationError
 
 #Step 2: Implement Serializers for Posts and Comments
@@ -77,3 +77,13 @@ class PostSerializer(serializers.ModelSerializer):
                     # #we want to create a new comment
                     # Comment.objects.create(post=instance,**comment_data)
         return instance
+
+class LikeSerializer(serializers.ModelSerializer):
+    number_of_likes = serializers.SerializerMethodField()
+    class Meta:
+        model = Like
+        fields = ['id', 'post', 'user', 'created_at','number_of_likes']
+        
+    def get_number_of_likes(self,obj):
+        return obj.post.post_likes.count()
+        

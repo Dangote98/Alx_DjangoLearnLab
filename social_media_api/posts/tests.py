@@ -4,7 +4,9 @@ from .views import PostViewSet,CommentViewSet
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from rest_framework import status
-from .models import Post
+from .models import Post,Like
+from django.contrib.contenttypes.models import ContentType
+from notifications.models import Notification
 # Create your tests here.
 
 #We now need to test these viewsets
@@ -39,6 +41,16 @@ class TestViews(APITestCase):
             last_name = 'Junior'
             
         )
+        self.client.login(email='martin@gmail.com',password='Martin1234.')
+        self.client.post(self.posts_url,{
+            "title":"This is the first test post for liking and unliking",
+            "content":"This is the content for this test post for liking and unliking"
+        })
+        self.client.post(self.posts_url,{
+            "title":"This is the second test post for liking and unliking",
+            "content":"This is the second post content for liking and unliking"
+        })
+        self.client.logout()
     #the first step is to test post creation.
     def test_post_creation(self):
         self.client.login(email='lawrence@gmail.com',password='Lawrence1234.')
@@ -70,6 +82,8 @@ class TestViews(APITestCase):
         })
         
         self.assertEquals(response.status_code,status.HTTP_201_CREATED)
+        #examine notification after comment has been created
+        
     def test_validate_length_of_title(self):
         self.client.login(email='lawrence@gmail.com',password='Lawrence1234.')
         response = self.client.post(self.posts_url,{
@@ -227,3 +241,102 @@ class TestViews(APITestCase):
         for post in response.data:
             self.assertEquals(post['author']['username'],'Martin') #here, I want to see whether the author for each post is martin
             print(post) #here, I want to see whether posts are printed
+    def test_like_post(self):
+        #first we login
+        response = self.client.post(self.login_user_url,{
+            "email":"lawrence@gmail.com",
+            "password":"Lawrence1234.",
+        })
+        
+        #we get the token
+        token = response.data.get('token')
+        print(f"Token for Lawrence during like post: {token}")
+        #we authenticate with token
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
+        #we check whether that login worked
+        self.assertEquals(response.status_code,status.HTTP_200_OK)
+        #we start the test
+        #first we get the post
+        post = Post.objects.get(title="This is the first test post for liking and unliking")
+        pk = post.id
+        print(f"This is the first post id for liking post: {pk}")
+        self.like_notify_url = reverse('like_post',args=[pk])
+        response=self.client.post(self.like_notify_url)
+        print(f"response data for liking post: {response.data}")
+        self.assertEquals(response.status_code,status.HTTP_201_CREATED)
+        #we get whether the post like number has changed
+        number_of_likes = post.post_likes.all().count()
+        print(f"the number of likes for the first post: {number_of_likes}")
+    def test_unlike_post(self):
+        #first we login
+        response = self.client.post(self.login_user_url,{
+            "email":"lawrence@gmail.com",
+            "password":"Lawrence1234.",
+        })
+        
+        #we get the token
+        token = response.data.get('token')
+        print(f"Token for Lawrence during like post: {token}")
+        #we authenticate with token
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
+        #we check whether that login worked
+        self.assertEquals(response.status_code,status.HTTP_200_OK)
+        #we start the test
+        #we must first like the post
+        post = Post.objects.get(title="This is the first test post for liking and unliking")
+        pk = post.id
+        print(f"This is the first post id for liking post: {pk}")
+        self.like_notify_url = reverse('like_post',args=[pk])
+        response=self.client.post(self.like_notify_url)
+        print(f"response data for liking post before unliking: {response.data}")
+        self.assertEquals(response.status_code,status.HTTP_201_CREATED)
+        #we get whether the post like number has changed
+        number_of_likes = post.post_likes.all().count()
+        print(f"the number of likes for the first post before unliking: {number_of_likes}")
+        
+        #first we get the post
+        post = Post.objects.get(title="This is the first test post for liking and unliking")
+        pk = post.id
+        print(f"This is the first post id for liking post: {pk}")
+        self.unlike_notify_url = reverse('unlike_post',args=[pk])
+        response=self.client.post(self.unlike_notify_url)
+        print(f"response data for unliking post: {response.data}")
+        self.assertEquals(response.status_code,status.HTTP_202_ACCEPTED)
+        #we get whether the post like number has changed
+        number_of_likes = post.post_likes.all().count()
+        print(f"the number of likes for the first post: {number_of_likes}")
+    def test_comment_recipient_notification(self):
+        response = self.client.post(self.login_user_url,{
+            "email":"lawrence@gmail.com",
+            "password":"Lawrence1234.",
+        })
+        
+        #we get the token
+        token = response.data.get('token')
+        print(f"Token for Lawrence during comment notify recipient: {token}")
+        #we authenticate with token
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
+        #we check whether that login worked
+        self.assertEquals(response.status_code,status.HTTP_200_OK)
+      #I have obtained the post
+        post = Post.objects.get(title="This is the first test post for liking and unliking")
+        post_id = post.id #I have then obtained the id of the post
+        print(post_id)
+        response = self.client.post(self.comments_url,{
+            "post_id": post_id, #I used post_id because It is referenced in the view as post_id where I get it from request data
+            "content":"This is the content for this first comment for testing notification"
+        })
+        
+        self.assertEquals(response.status_code,status.HTTP_201_CREATED)
+        #examine notification after comment has been created
+        #author of the retrieved post is Michael
+        self.client.logout()
+        
+        self.client.login(email='martin@gmail.com',password='Martin1234.')
+        user = get_user_model().objects.get(email='martin@gmail.com')
+        self.notification_url = reverse('user notifications')
+        total_notifications = user.recipient_notifications.all().count()
+        print(f'total notifications for michael: {total_notifications}')
+        response = self.client.get(self.notification_url)
+        print(f'response data for notifications for michael: {response.data}')
+        

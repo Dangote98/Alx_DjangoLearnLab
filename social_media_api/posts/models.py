@@ -22,3 +22,15 @@ class Comment(models.Model):
     
     def __str__(self):
         return f"Post Referenced: '{self.post.title}' Author Referenced: '{self.author}'"
+#we need to create a like model to manage likes
+class Like(models.Model):
+    post = models.ForeignKey(Post,on_delete=models.CASCADE,related_name='post_likes')
+    user = models.ForeignKey(get_user_model(),on_delete=models.CASCADE,related_name='user_likes') #the one liking
+    created_at = models.DateTimeField(auto_now_add=True)
+    @property
+    def postlikes(self):
+        number_of_likes = self.post_likes.all().count()
+        return str(number_of_likes)
+    def userlikes(self):
+        number_of_user_likes = self.user_likes.all().count()
+        return str(number_of_user_likes)

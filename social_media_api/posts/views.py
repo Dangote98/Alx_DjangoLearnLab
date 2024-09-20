@@ -1,7 +1,8 @@
 from django.shortcuts import render,get_object_or_404
-from .serializers import PostSerializer,CommentSerializer
-from .models import Post,Comment
+from .serializers import PostSerializer,CommentSerializer,LikeSerializer
+from .models import Post,Comment,Like
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
 from rest_framework import viewsets
 from rest_framework.permissions import BasePermission, IsAuthenticated, SAFE_METHODS
 from rest_framework import filters
@@ -9,6 +10,8 @@ from rest_framework.decorators import permission_classes,api_view
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import permissions
+from rest_framework import generics
+from notifications.models import Notification
 User = get_user_model()
 # Create your views here.
 #Step 3: Create Views for CRUD Operations
@@ -36,6 +39,8 @@ class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated,ReadOnlyPostComments]
     serializer_class = CommentSerializer
     queryset = Comment.objects.all()
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['content']
     def perform_create(self, serializer):
         #here, I want to influence what the serializer can do. I want it to save the author directly
         #here, I have added additional context to ensure I am getting the exact post. I am saying from request.data. get the post_id
@@ -43,8 +48,17 @@ class CommentViewSet(viewsets.ModelViewSet):
         post_id = self.request.data.get('post_id')
         post = get_object_or_404(Post, id=post_id)
         serializer.save(author=self.request.user,post=post)
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['content']
+         # Create a notification for the post author
+        Notification.objects.create(
+            recipient=post.author,
+            actor=self.request.user,
+            verb=2,  # 'Comment' as per notification types
+            target=post,
+            content_type=ContentType.objects.get_for_model(post),
+            object_id=post.id,
+            text_preview=post.content
+        )
+   
 """"
 Step 5: Implement Pagination and Filtering
 Enhance API Usability:
@@ -67,4 +81,43 @@ def user_feed(request):
     posts_by_these_following_users = Post.objects.filter(author__in=following_users).order_by('-created_at')
     serializer = PostSerializer(posts_by_these_following_users,many=True)
     return Response(serializer.data,status=status.HTTP_200_OK)
+
+#we create a view to handle liking of a post and also notifications of the same
+class Like_Post(generics.GenericAPIView):
+    #first, the user must be authenticated
+    permission_classes = [permissions.IsAuthenticated]
     
+    def post(self,request,pk):
+        #first we get the post
+        post = get_object_or_404(Post,id=pk)
+        like, created = Like.objects.get_or_create(post=post,user=request.user)
+        #we call notifications after user has been created
+        if created:
+            Notification.objects.create(
+                recipient=post.author,
+                actor=request.user,
+                verb=1, #I used this because it is what is in my notification types
+                target=post,
+                content_type=ContentType.objects.get_for_model(post),
+                object_id=post.id,
+                text_preview=post.content
+                
+            )
+            like_serializer = LikeSerializer(like)
+            return Response({"like":like_serializer.data,"message":f"post liked by {request.user.username}"},status=status.HTTP_201_CREATED)
+        else:
+            return Response({"message":"You have already liked this post"})
+        
+class Unlike_Post(generics.GenericAPIView):
+    permission_classes=[permissions.IsAuthenticated]
+    
+    def post(self,request,pk):
+        #we first get the post that was liked
+        post = get_object_or_404(Post,id=pk)
+        #we get the like
+        like = Like.objects.get(post=post,user=request.user)
+        if like:
+            like.delete()
+            return Response({"You have unliked":f"{post.title}"},status=status.HTTP_202_ACCEPTED)
+        else:
+            return Response({"You have not yet liked":f"{post.title}"},status=status.HTTP_404_NOT_FOUND)

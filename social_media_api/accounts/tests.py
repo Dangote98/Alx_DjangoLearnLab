@@ -5,6 +5,7 @@ from django.urls import reverse
 from .models import CustomUser
 from django.contrib.auth import get_user_model
 from rest_framework import status
+from notifications.models import Notification
 # Create your tests here.
 #setUp allows us to initialize important details
 class TestViews(APITestCase):
@@ -260,3 +261,63 @@ class TestViews(APITestCase):
         self.view_users_url = reverse('viewusers')
         response = self.client.get(self.view_users_url)
         print(response.data)
+    def test_notification_after_following_user_and_after_reading_notification(self):
+        #first we log in the user
+        response = self.client.post(self.login_user_url,{
+            "email":"michael@gmail.com",
+            "password":"Michael1234.",
+        })
+        # self.client.login(email="michael@gmail.com",password="Michael1234.")
+        token = response.data.get('token')
+        print(f"Token for Michael: {token}")
+        # Set the token for subsequent requests
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
+        #we check whether that login worked
+        self.assertEquals(response.status_code,status.HTTP_200_OK)
+        #we now need to follow another user
+        User = get_user_model()
+        user_to_follow = User.objects.get(username='Lawrence')
+        user_id = user_to_follow.id
+        print(f"Lawrence user id during notification test: {user_id}")
+        #we now need to follow this user
+        self.follow_url = reverse('following',args=[user_id])
+        response = self.client.post(self.follow_url)
+        print(response.data)
+        self.assertEquals(response.status_code,status.HTTP_202_ACCEPTED)
+        user_following = User.objects.get(username='Michael')
+        following_count = user_following.following.all().count() #It tracks number of followers the user has
+        print(f"number of people Michael is following testing notification: {following_count}")
+        self.client.logout()
+        #we now login lawrence who has been followed by Michael to check notifications
+        self.client.login(email='lawssen@gmail.com',password='Michael1234.')
+        #we estbalish logic for checking notifications
+        user = get_user_model().objects.get(email='lawssen@gmail.com')
+        self.notification_url = reverse('user notifications')
+        total_notifications = user.recipient_notifications.all().count()
+        print(f'total notifications for Lawrence: {total_notifications}')
+        response = self.client.get(self.notification_url)
+        print(f'response data for notifications for Lawrence: {response.data}')
+        #Filter is seen=False
+        self.filter_url = f"{self.notification_url}?is_seen=False" #we should use a string like this
+        #We examine the data
+        response = self.client.get(self.filter_url)
+        print(f"Notifications with is_seen=False before reading: {response.data}")
+        #we get lawrence to read notifications
+        #trying to print notification data
+        notifications = response.data['user notifications']
+        print(f'I am trying to see data content for user notifications {notifications}')
+        notification_id = notifications[0]['id']
+        notification = Notification.objects.get(id=notification_id)
+        print(f'notification is seen status before reading {notification.is_seen}')
+        print(f'I am then trying to access the id of that notification {notification_id}')
+        #here we get the notification id
+        self.read_notifications_url = reverse('read notifications',args=[notification_id]) #pass it as an argument
+        response = self.client.post(self.read_notifications_url) #get to mark the notification as read
+        self.assertEquals(response.status_code,status.HTTP_200_OK)
+        notification_id = notifications[0]['id']
+        notification = Notification.objects.get(id=notification_id)
+        print(f'notification is seen status after reading {notification.is_seen}')
+        #I now want to filter so that I see whether the results are none for is_seen =False
+        self.filter_url = f"{self.notification_url}?is_seen=False" #we should use a string like this
+        response = self.client.get(self.filter_url)
+        print(f"Notifications with is_seen=False after reading: {response.data}")

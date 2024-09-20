@@ -12,6 +12,8 @@ from rest_framework.authentication import TokenAuthentication
 from django.contrib.auth import get_user_model
 from rest_framework import generics
 from rest_framework import permissions
+from notifications.models import Notification
+from django.contrib.contenttypes.models import ContentType
 
 # Create your views here.
 #use a function view with an api decorator to signup
@@ -76,11 +78,19 @@ User = get_user_model()
 def follow_user(request,user_id):
     #we get that id of the user
     user_to_follow = User.objects.get(id=user_id)
+    user_doing_the_following = request.user
     #we check whether that user exists
     if user_to_follow:
         #we use related name and add because we are dealing with many to many relationships
         request.user.following.add(user_to_follow)
-        
+        Notification.objects.create(
+            recipient=user_to_follow,
+            actor=user_doing_the_following,
+            verb=3,  # 'Comment' as per notification types
+            target=user_to_follow, #the target is the person experincing an action. in this case being followed
+            content_type=ContentType.objects.get_for_model(user_to_follow), #content type is that of target
+            object_id=user_to_follow.id
+        )
         return Response({"You are now following":user_to_follow.username},status=status.HTTP_202_ACCEPTED)
     else:
         #we raise an error incase the follow fails
@@ -106,6 +116,8 @@ class FollowUsers(generics.GenericAPIView):
         user_to_follow = CustomUser.objects.get(id=user_id)
         if user_to_follow:
             request.user.following.add(user_to_follow)
+            
+            
             
             return Response(f"You are now following {user_to_follow.username}", status=status.HTTP_202_ACCEPTED)
         else:
