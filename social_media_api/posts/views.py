@@ -12,6 +12,7 @@ from rest_framework import status
 from rest_framework import permissions
 from rest_framework import generics
 from notifications.models import Notification
+from rest_framework.generics import get_object_or_404
 # generics.get_object_or_404(Post, pk=pk) Checker
 # Like.objects.get_or_create(user=request.user, post=post) Checker
 User = get_user_model()
@@ -49,7 +50,6 @@ class CommentViewSet(viewsets.ModelViewSet):
         #Then, I am retrieving the post and saving it as part of the serializer
         post_id = self.request.data.get('post_id')
         post = get_object_or_404(Post, id=post_id)
-     
         serializer.save(author=self.request.user,post=post)
          # Create a notification for the post author
         Notification.objects.create(
@@ -92,9 +92,8 @@ class Like_Post(generics.GenericAPIView):
     
     def post(self,request,pk):
         #first we get the post
-        # post = get_object_or_404(Post,id=pk)
-        post = generics.get_object_or_404(Post,pk=pk) #checker requires this
-        like, created = Like.objects.get_or_create(user=request.user,post=post)
+        post = get_object_or_404(Post,id=pk)
+        like, created = Like.objects.get_or_create(post=post,user=request.user)
         #we call notifications after user has been created
         if created:
             Notification.objects.create(
@@ -117,11 +116,9 @@ class Unlike_Post(generics.GenericAPIView):
     
     def post(self,request,pk):
         #we first get the post that was liked
-        # post = get_object_or_404(Post,id=pk)
-        post = generics.get_object_or_404(Post,pk=pk) #checker requires this
-        
+        post = get_object_or_404(Post,id=pk)
         #we get the like
-        like, created = Like.objects.get_or_create(user=request.user,post=post)
+        like = Like.objects.get(post=post,user=request.user)
         if like:
             like.delete()
             return Response({"You have unliked":f"{post.title}"},status=status.HTTP_202_ACCEPTED)
