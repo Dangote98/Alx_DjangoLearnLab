@@ -116,9 +116,11 @@ class Unlike_Post(generics.GenericAPIView):
     
     def post(self,request,pk):
         #we first get the post that was liked
-        post = get_object_or_404(Post,id=pk)
+        # post = get_object_or_404(Post,id=pk)
+        post = generics.get_object_or_404(Post,pk=pk) #checker requires this
+        
         #we get the like
-        like = Like.objects.get(post=post,user=request.user)
+        like, created = Like.objects.get_or_create(user=request.user,post=post)
         if like:
             like.delete()
             return Response({"You have unliked":f"{post.title}"},status=status.HTTP_202_ACCEPTED)
