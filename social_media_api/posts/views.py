@@ -12,7 +12,8 @@ from rest_framework import status
 from rest_framework import permissions
 from rest_framework import generics
 from notifications.models import Notification
-
+# generics.get_object_or_404(Post, pk=pk) Checker
+# Like.objects.get_or_create(user=request.user, post=post) Checker
 User = get_user_model()
 # Create your views here.
 #Step 3: Create Views for CRUD Operations
