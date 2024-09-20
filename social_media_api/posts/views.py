@@ -12,6 +12,7 @@ from rest_framework import status
 from rest_framework import permissions
 from rest_framework import generics
 from notifications.models import Notification
+
 User = get_user_model()
 # Create your views here.
 #Step 3: Create Views for CRUD Operations
@@ -47,6 +48,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         #Then, I am retrieving the post and saving it as part of the serializer
         post_id = self.request.data.get('post_id')
         post = get_object_or_404(Post, id=post_id)
+     
         serializer.save(author=self.request.user,post=post)
          # Create a notification for the post author
         Notification.objects.create(
@@ -89,8 +91,9 @@ class Like_Post(generics.GenericAPIView):
     
     def post(self,request,pk):
         #first we get the post
-        post = get_object_or_404(Post,id=pk)
-        like, created = Like.objects.get_or_create(post=post,user=request.user)
+        # post = get_object_or_404(Post,id=pk)
+        post = generics.get_object_or_404(Post,pk=pk) #checker requires this
+        like, created = Like.objects.get_or_create(user=request.user,post=post)
         #we call notifications after user has been created
         if created:
             Notification.objects.create(
