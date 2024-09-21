@@ -30,9 +30,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = '&*&k^@nnys8s*q7i%qw_#&ix3z_l9!=g2oe3rfjb!6fz=hyz_v&*&k^@nnys8s*q7i%qw_#&ix3z_l9!=g2oe3rfjb!6fz=hyz_v&*&k^@nnys8s*q7i%qw_#&ix3z_l9!=g2oe3rfjb!6fz=hyz_v&*&k^@nnys8s*q7i%qw_#&ix3z_l9!=g2oe3rfjb!6fz=hyz_v'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['pythonanywhere.com']
 
 
 # Application definition
