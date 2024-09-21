@@ -11,7 +11,13 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
+
+my_public_key = os.getenv('AWS_ACCESS_KEY_ID')
+my_secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,7 +26,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-@z53j*qb6l!4l331_80o)*htq+=-s!-(h7hz1$!dsd#krmk#)='
+# SECRET_KEY = 'django-insecure-@z53j*qb6l!4l331_80o)*htq+=-s!-(h7hz1$!dsd#krmk#)='
+SECRET_KEY = '&*&k^@nnys8s*q7i%qw_#&ix3z_l9!=g2oe3rfjb!6fz=hyz_v&*&k^@nnys8s*q7i%qw_#&ix3z_l9!=g2oe3rfjb!6fz=hyz_v&*&k^@nnys8s*q7i%qw_#&ix3z_l9!=g2oe3rfjb!6fz=hyz_v&*&k^@nnys8s*q7i%qw_#&ix3z_l9!=g2oe3rfjb!6fz=hyz_v'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -137,3 +144,26 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 2
     }
+CSRF_COOKIE_SECURE=True
+SESSION_COOKIE_SECURE=True
+SECURE_SSL_REDIRECT=True
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_HSTS_SECONDS = 86400
+SECURE_HSTS_PRELOAD = True
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+X_FRAME_OPTIONS = 'DENY'
+
+AWS_ACCESS_KEY_ID = my_public_key
+AWS_SECRET_ACCESS_KEY = my_secret_key
+
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "mysql.connector.django",
+#         "NAME": "API4",
+#         "USER": DB_USER,
+#         "PASSWORD": DB_PASSWORD,
+#         "HOST": DB_HOST,
+#         "PORT": "3306",
+#     }
+# }
